@@ -1,0 +1,40 @@
+begin
+  puts "Enter your email:"
+  email_input = gets.chomp
+  if User.valid_email?(email_input)
+    user = User.select_user(email_input)
+  else
+    user = User.new(email: email_input)
+    user.save!
+  end
+rescue StandardError => e
+  puts e.message
+  retry
+end
+begin
+  puts "What do you want to do"
+  puts "0. Create shortened URL"
+  puts "1. Visit shortened URL"
+  choice = Integer(gets.chomp)
+  raise "invalid entry" unless (0..1).to_a.include? choice
+  if choice == 0 
+    puts "Type in the your long url"
+    long_url = gets.chomp
+    s_url = ShortenedUrl.create_for_user_and_long_url!(user, long_url)
+    raise StandardError, "user is not valid" if !s_url.valid?
+    puts "Short url is : #{s_url.short_url}"
+  else
+    puts "Type in the shortened URL"
+    short_url = gets.chomp
+    su = ShortenedUrl.get_shortened_url_by_url(short_url)
+    visit = Visit.record_visit!(user, su)
+    raise StandardError, "not a valid url" unless visit.valid?
+    Launchy.open(su.long_url)
+  end  
+rescue StandardError => r
+  puts r.message
+  retry
+end
+  
+  
+  
